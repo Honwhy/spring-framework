@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ import org.junit.Test
  * @author Sebastien Deleuze
  */
 @Suppress("unused", "UNUSED_PARAMETER")
-class BeanUtilsKotlinTests {
+class KotlinBeanUtilsTests {
 
 	@Test
 	fun `Instantiate immutable class`() {
@@ -52,11 +52,19 @@ class BeanUtilsKotlinTests {
 	}
 
 	@Test
-		fun `Instantiate immutable class with optional parameter specified with null value`() {
+	fun `Instantiate immutable class with optional parameter specified with null value`() {
 		val constructor = BeanUtils.findPrimaryConstructor(Bar::class.java)!!
 		val bar = BeanUtils.instantiateClass(constructor, "a", null)
 		assertEquals("a", bar.param1)
 		assertEquals(12, bar.param2)
+	}
+
+	@Test  // gh-22531
+	fun `Instantiate immutable class with nullable parameter`() {
+		val constructor = BeanUtils.findPrimaryConstructor(Qux::class.java)!!
+		val bar = BeanUtils.instantiateClass(constructor, "a", null)
+		assertEquals("a", bar.param1)
+		assertNull(bar.param2)
 	}
 
 	@Test  // SPR-15851
@@ -71,6 +79,8 @@ class BeanUtilsKotlinTests {
 	class Bar(val param1: String, val param2: Int = 12)
 
 	class Baz(var param1: String = "a", var param2: Int = 12)
+
+	class Qux(val param1: String, val param2: Int?)
 
 	class TwoConstructorsWithDefaultOne {
 

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -64,19 +64,17 @@ public interface TestContext extends AttributeAccessor, Serializable {
 	/**
 	 * Get the current {@linkplain Object test instance} for this test context.
 	 * <p>Note: this is a mutable property.
-	 * @return the current test instance (may be {@code null})
+	 * @return the current test instance (never {@code null})
 	 * @see #updateState(Object, Method, Throwable)
 	 */
-	@Nullable
 	Object getTestInstance();
 
 	/**
 	 * Get the current {@linkplain Method test method} for this test context.
 	 * <p>Note: this is a mutable property.
-	 * @return the current test method (may be {@code null})
+	 * @return the current test method (never {@code null})
 	 * @see #updateState(Object, Method, Throwable)
 	 */
-	@Nullable
 	Method getTestMethod();
 
 	/**
@@ -103,7 +101,7 @@ public interface TestContext extends AttributeAccessor, Serializable {
 
 	/**
 	 * Update this test context to reflect the state of the currently executing test.
-	 * <p><strong>WARNING</strong>: this method should only be invoked by the
+	 * <p><strong>WARNING</strong>: This method should only be invoked by the
 	 * {@link TestContextManager}.
 	 * <p>Caution: concurrent invocations of this method might not be thread-safe,
 	 * depending on the underlying implementation.

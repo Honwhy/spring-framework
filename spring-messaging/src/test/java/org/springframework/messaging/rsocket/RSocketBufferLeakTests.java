@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.messaging.rsocket;
 
 import java.time.Duration;
@@ -27,9 +28,9 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
 import io.rsocket.AbstractRSocket;
-import io.rsocket.Frame;
 import io.rsocket.RSocket;
 import io.rsocket.RSocketFactory;
+import io.rsocket.frame.decoder.PayloadDecoder;
 import io.rsocket.plugins.RSocketInterceptor;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.server.CloseableChannel;
@@ -85,11 +86,10 @@ public class RSocketBufferLeakTests {
 	@BeforeClass
 	@SuppressWarnings("ConstantConditions")
 	public static void setupOnce() {
-
 		context = new AnnotationConfigApplicationContext(ServerConfig.class);
 
 		server = RSocketFactory.receive()
-				.frameDecoder(Frame::retain) // zero copy
+				.frameDecoder(PayloadDecoder.ZERO_COPY)
 				.addServerPlugin(payloadInterceptor) // intercept responding
 				.acceptor(context.getBean(MessageHandlerAcceptor.class))
 				.transport(TcpServerTransport.create("localhost", 7000))
@@ -97,7 +97,7 @@ public class RSocketBufferLeakTests {
 				.block();
 
 		client = RSocketFactory.connect()
-				.frameDecoder(Frame::retain) // zero copy
+				.frameDecoder(PayloadDecoder.ZERO_COPY)
 				.addClientPlugin(payloadInterceptor) // intercept outgoing requests
 				.dataMimeType(MimeTypeUtils.TEXT_PLAIN_VALUE)
 				.transport(TcpClientTransport.create("localhost", 7000))
@@ -246,11 +246,9 @@ public class RSocketBufferLeakTests {
 
 		private final List<DataBufferLeakInfo> created = new ArrayList<>();
 
-
 		LeakAwareNettyDataBufferFactory(ByteBufAllocator byteBufAllocator) {
 			super(byteBufAllocator);
 		}
-
 
 		void checkForLeaks(Duration duration) throws InterruptedException {
 			Instant start = Instant.now();
@@ -316,7 +314,6 @@ public class RSocketBufferLeakTests {
 
 		private final AssertionError error;
 
-
 		DataBufferLeakInfo(DataBuffer dataBuffer, AssertionError error) {
 			this.dataBuffer = dataBuffer;
 			this.error = error;
@@ -339,7 +336,6 @@ public class RSocketBufferLeakTests {
 	private static class PayloadInterceptor extends AbstractRSocket implements RSocketInterceptor {
 
 		private final List<PayloadSavingDecorator> rsockets = new CopyOnWriteArrayList<>();
-
 
 		void checkForLeaks() {
 			this.rsockets.stream().map(PayloadSavingDecorator::getPayloads)
@@ -377,7 +373,6 @@ public class RSocketBufferLeakTests {
 			this.rsockets.forEach(PayloadSavingDecorator::reset);
 		}
 
-
 		@Override
 		public RSocket apply(RSocket rsocket) {
 			PayloadSavingDecorator decorator = new PayloadSavingDecorator(rsocket);
@@ -392,11 +387,9 @@ public class RSocketBufferLeakTests {
 
 			private ReplayProcessor<PayloadLeakInfo> payloads = ReplayProcessor.create();
 
-
 			PayloadSavingDecorator(RSocket delegate) {
 				this.delegate = delegate;
 			}
-
 
 			ReplayProcessor<PayloadLeakInfo> getPayloads() {
 				return this.payloads;
@@ -447,12 +440,10 @@ public class RSocketBufferLeakTests {
 
 		private final ReferenceCounted referenceCounted;
 
-
 		PayloadLeakInfo(io.rsocket.Payload payload) {
 			this.description = payload.toString();
 			this.referenceCounted = payload;
 		}
-
 
 		int getReferenceCount() {
 			return this.referenceCounted.refCnt();
@@ -463,4 +454,5 @@ public class RSocketBufferLeakTests {
 			return this.description;
 		}
 	}
+
 }

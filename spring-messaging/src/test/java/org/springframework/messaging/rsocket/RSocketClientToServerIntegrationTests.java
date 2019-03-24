@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.messaging.rsocket;
 
 import java.time.Duration;
 
 import io.netty.buffer.PooledByteBufAllocator;
-import io.rsocket.Frame;
 import io.rsocket.RSocket;
 import io.rsocket.RSocketFactory;
+import io.rsocket.frame.decoder.PayloadDecoder;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.server.CloseableChannel;
 import io.rsocket.transport.netty.server.TcpServerTransport;
@@ -66,12 +67,11 @@ public class RSocketClientToServerIntegrationTests {
 	@BeforeClass
 	@SuppressWarnings("ConstantConditions")
 	public static void setupOnce() {
-
 		context = new AnnotationConfigApplicationContext(ServerConfig.class);
 
 		server = RSocketFactory.receive()
 				.addServerPlugin(interceptor)
-				.frameDecoder(Frame::retain)  // as per https://github.com/rsocket/rsocket-java#zero-copy
+				.frameDecoder(PayloadDecoder.ZERO_COPY)
 				.acceptor(context.getBean(MessageHandlerAcceptor.class))
 				.transport(TcpServerTransport.create("localhost", 7000))
 				.start()
@@ -79,7 +79,7 @@ public class RSocketClientToServerIntegrationTests {
 
 		client = RSocketFactory.connect()
 				.dataMimeType(MimeTypeUtils.TEXT_PLAIN_VALUE)
-				.frameDecoder(Frame::retain)  // as per https://github.com/rsocket/rsocket-java#zero-copy
+				.frameDecoder(PayloadDecoder.ZERO_COPY)
 				.transport(TcpClientTransport.create("localhost", 7000))
 				.start()
 				.block();
@@ -97,7 +97,6 @@ public class RSocketClientToServerIntegrationTests {
 
 	@Test
 	public void fireAndForget() {
-
 		Flux.range(1, 3)
 				.concatMap(i -> requester.route("receive").data("Hello " + i).send())
 				.blockLast();
@@ -106,6 +105,7 @@ public class RSocketClientToServerIntegrationTests {
 				.expectNext("Hello 1")
 				.expectNext("Hello 2")
 				.expectNext("Hello 3")
+				.thenAwait(Duration.ofMillis(50))
 				.thenCancel()
 				.verify(Duration.ofSeconds(5));
 
@@ -190,7 +190,6 @@ public class RSocketClientToServerIntegrationTests {
 	static class ServerController {
 
 		final ReplayProcessor<String> fireForgetPayloads = ReplayProcessor.create();
-
 
 		@MessageMapping("receive")
 		void receive(String payload) {

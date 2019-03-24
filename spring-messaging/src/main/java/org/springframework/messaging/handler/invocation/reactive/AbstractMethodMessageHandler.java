@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.messaging.handler.invocation.reactive;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,7 +26,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -102,7 +106,7 @@ public abstract class AbstractMethodMessageHandler<T>
 	 * Configure custom resolvers for handler method arguments.
 	 */
 	public void setArgumentResolverConfigurer(ArgumentResolverConfigurer configurer) {
-		Assert.notNull(configurer, "HandlerMethodArgumentResolver is required.");
+		Assert.notNull(configurer, "HandlerMethodArgumentResolver is required");
 		this.argumentResolverConfigurer = configurer;
 	}
 
@@ -117,7 +121,7 @@ public abstract class AbstractMethodMessageHandler<T>
 	 * Configure custom return value handlers for handler metohds.
 	 */
 	public void setReturnValueHandlerConfigurer(ReturnValueHandlerConfigurer configurer) {
-		Assert.notNull(configurer, "ReturnValueHandlerConfigurer is required.");
+		Assert.notNull(configurer, "ReturnValueHandlerConfigurer is required");
 		this.returnValueHandlerConfigurer = configurer;
 	}
 
@@ -283,10 +287,25 @@ public abstract class AbstractMethodMessageHandler<T>
 			Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
 					(MethodIntrospector.MetadataLookup<T>) method -> getMappingForMethod(method, userType));
 			if (logger.isDebugEnabled()) {
-				logger.debug(methods.size() + " message handler methods found on " + userType + ": " + methods);
+				logger.debug(formatMappings(userType, methods));
 			}
 			methods.forEach((key, value) -> registerHandlerMethod(handler, key, value));
 		}
+	}
+
+	private String formatMappings(Class<?> userType, Map<Method, T> methods) {
+		String formattedType = Arrays.stream(ClassUtils.getPackageName(userType).split("\\."))
+				.map(p -> p.substring(0, 1))
+				.collect(Collectors.joining(".", "", "." + userType.getSimpleName()));
+		Function<Method, String> methodFormatter = method -> Arrays.stream(method.getParameterTypes())
+				.map(Class::getSimpleName)
+				.collect(Collectors.joining(",", "(", ")"));
+		return methods.entrySet().stream()
+				.map(e -> {
+					Method method = e.getKey();
+					return e.getValue() + ": " + method.getName() + methodFormatter.apply(method);
+				})
+				.collect(Collectors.joining("\n\t", "\n\t" + formattedType + ":" + "\n\t", ""));
 	}
 
 	/**
@@ -321,9 +340,6 @@ public abstract class AbstractMethodMessageHandler<T>
 		}
 
 		this.handlerMethods.put(mapping, newHandlerMethod);
-		if (logger.isTraceEnabled()) {
-			logger.trace("Mapped \"" + mapping + "\" onto " + newHandlerMethod);
-		}
 
 		for (String pattern : getDirectLookupMappings(mapping)) {
 			this.destinationLookup.add(pattern, mapping);
@@ -450,7 +466,6 @@ public abstract class AbstractMethodMessageHandler<T>
 	 * @param destination the destination
 	 * @param message the message
 	 */
-	@Nullable
 	protected void handleNoMatch(@Nullable String destination, Message<?> message) {
 		logger.debug("No handlers for destination '" + destination + "'");
 	}

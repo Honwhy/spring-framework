@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,16 +43,15 @@ public class RSocketRequesterMethodArgumentResolver implements HandlerMethodArgu
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		Class<?> type = parameter.getParameterType();
-		return RSocketRequester.class.equals(type) || RSocket.class.isAssignableFrom(type);
+		return (RSocketRequester.class.equals(type) || RSocket.class.isAssignableFrom(type));
 	}
 
 	@Override
 	public Mono<Object> resolveArgument(MethodParameter parameter, Message<?> message) {
-
 		Object headerValue = message.getHeaders().get(RSOCKET_REQUESTER_HEADER);
 		Assert.notNull(headerValue, "Missing '" + RSOCKET_REQUESTER_HEADER + "'");
-		Assert.isInstanceOf(RSocketRequester.class, headerValue, "Expected header value of type RSocketRequester");
 
+		Assert.isInstanceOf(RSocketRequester.class, headerValue, "Expected header value of type RSocketRequester");
 		RSocketRequester requester = (RSocketRequester) headerValue;
 
 		Class<?> type = parameter.getParameterType();
